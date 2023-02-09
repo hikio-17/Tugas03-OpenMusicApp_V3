@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const Hapi = require('@hapi/hapi');
 const Jwt = require('@hapi/jwt');
+const Inert = require('@hapi/inert');
 
 const ClientError = require('./exceptions/ClientError');
 
@@ -36,6 +37,11 @@ const collaborations = require('./api/collaborations');
 const CollaborationsValidator = require('./validator/collaborations');
 const CollaborationsService = require('./services/CollaborationsService');
 
+// exports
+const _exports = require('./api/exports');
+const ExportsValidator = require('./validator/exports');
+const ProducerService = require('./services/ProducerService');
+
 const init = async () => {
   const playlistsService = new PlaylistsService();
   const albumsService = new AlbumsService();
@@ -59,6 +65,9 @@ const init = async () => {
     {
       plugin: Jwt,
     },
+    {
+      plugin: Inert,
+    }
   ]);
 
   // mendefinisikan strategy autentikasi jwt
@@ -122,6 +131,13 @@ const init = async () => {
         collaborationsService,
         playlistsService,
         validator: CollaborationsValidator,
+      },
+    },
+    {
+      plugin: _exports,
+      options: {
+        service: ProducerService,
+        validator: ExportsValidator,
       },
     },
   ]);
