@@ -7,6 +7,7 @@ const routes = (handler) => [
     handler: (request, h) => handler.postUploadCoverAlbumHandler(request, h),
     options: {
       payload: {
+        maxBytes: 512000,
         allow: 'multipart/form-data',
         multipart: true,
         output: 'stream',

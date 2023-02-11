@@ -15,6 +15,14 @@ const routes = (handler) => [
     handler: (request, h) => handler.putAlbumByIdHandler(request, h),
   },
   {
+    method: 'POST',
+    path: '/albums/{id}/likes',
+    handler: (request, h) => handler.postLikeUnlikeAlbumHandler(request, h),
+    options: {
+      auth: 'openmusicapp_jwt',
+    },
+  },
+  {
     method: 'DELETE',
     path: '/albums/{id}',
     handler: (request, h) => handler.deleteAlbumByIdHandler(request, h),
