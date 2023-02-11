@@ -6,7 +6,6 @@ exports.up = (pgm) => {
   pgm.addColumn('albums', {
     coverUrl: {
       type: 'TEXT',
-      default: null,
     },
   });
 };
