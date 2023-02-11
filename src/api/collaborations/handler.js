@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 class CollaborationsHandler {
   constructor(collaborationsService, playlistsService, validator) {
     this._collaborationsService = collaborationsService;

@@ -1,4 +1,3 @@
-/* eslint-disable no-unused-vars */
 class AuthenticationsHandler {
   constructor(authenticationsService, usersService, tokenManager, validator) {
     this._authenticationsService = authenticationsService;

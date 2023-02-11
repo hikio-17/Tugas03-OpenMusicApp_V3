@@ -1,14 +1,11 @@
-/* eslint-disable class-methods-use-this */
-const { Pool } = require('pg');
 const PlaylistsService = require('../../services/PlaylistsService');
 
 class ExportsHandler {
   constructor(service, validator) {
     this._service = service;
     this._validator = validator;
-    this._playlistService = new PlaylistsService();
 
-    this._pool = new Pool();
+    this._playlistService = new PlaylistsService();
   }
 
   async postExportPlaylistsHandler(request, h) {
@@ -29,7 +26,7 @@ class ExportsHandler {
 
     const response = h.response({
       status: 'success',
-      message: 'Permintaan anda sedang diproses',
+      message: 'Permintaan Anda sedang kami proses',
     });
     response.code(201);
     return response;

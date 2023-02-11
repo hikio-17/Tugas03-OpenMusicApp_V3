@@ -14,8 +14,8 @@ class CollaborationsService {
       values: [userId],
     };
 
-    const resultUser = await this._pool.query(queryUser);
-    if (!resultUser.rowCount) {
+    const { rowCount } = await this._pool.query(queryUser);
+    if (!rowCount) {
       throw new NotFoundError('User tidak ditemukan');
     }
     const id = `collab-${nanoid(16)}`;
@@ -25,13 +25,13 @@ class CollaborationsService {
       values: [id, playlistId, userId],
     };
 
-    const result = await this._pool.query(query);
+    const { rows } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rows[0].id) {
       throw new InvariantError('Kolaborasi gagal ditambahkan');
     }
 
-    return result.rows[0].id;
+    return rows[0].id;
   }
 
   async deleteCollaboration(playlistId, userId) {
@@ -40,9 +40,9 @@ class CollaborationsService {
       values: [playlistId, userId],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new InvariantError('Kolaborasi gagal dihapus');
     }
   }

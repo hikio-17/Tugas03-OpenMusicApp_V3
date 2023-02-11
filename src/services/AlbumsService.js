@@ -1,13 +1,14 @@
-/* eslint-disable array-callback-return */
 const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../exceptions/InvariantError');
 const NotFoundError = require('../exceptions/NotFoundError');
 const { mapAlbumToModel } = require('../utils/mapDBToModel');
+const CacheService = require('./CacheService');
 
 class AlbumsService {
   constructor() {
     this._pool = new Pool();
+    this._cacheService = new CacheService();
   }
 
   async addAlbum({ name, year }) {
@@ -18,13 +19,13 @@ class AlbumsService {
       values: [id, name, year],
     };
 
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new InvariantError('Album gagal ditambahkan');
     }
 
-    return result.rows[0].id;
+    return rows[0].id;
   }
 
   async getAlbumById(id) {
@@ -33,13 +34,13 @@ class AlbumsService {
       values: [id],
     };
 
-    const resultAlbum = await this._pool.query(queryAlbum);
+    const { rowCount, rows: resultAlbum } = await this._pool.query(queryAlbum);
 
-    if (!resultAlbum.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Album tidak ditemukan');
     }
 
-    const album = resultAlbum.rows.map(mapAlbumToModel)[0];
+    const album = resultAlbum.map(mapAlbumToModel)[0];
 
     const querySongInAlbum = {
       text: `SELECT songs.id, songs.performer 
@@ -50,9 +51,9 @@ class AlbumsService {
       values: [id],
     };
 
-    const resultSongs = await this._pool.query(querySongInAlbum);
+    const { rows: resultSongs } = await this._pool.query(querySongInAlbum);
 
-    const songs = resultSongs.rows;
+    const songs = resultSongs;
 
     const data = {
       ...album,
@@ -68,9 +69,9 @@ class AlbumsService {
       values: [name, year, id],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Gagal memeperbarui Album. Id tidak ditemukan');
     }
   }
@@ -81,9 +82,9 @@ class AlbumsService {
       values: [id],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Gagal menghapus Album. Id tidak ditemukan');
     }
   }
@@ -95,6 +96,60 @@ class AlbumsService {
     };
 
     await this._pool.query(query);
+  }
+
+  async albumLikes(albumId, userId) {
+    const queryCheckAlbum = {
+      text: 'SELECT * FROM albums WHERE id = $1',
+      values: [albumId],
+    };
+
+    const { rowCount } = await this._pool.query(queryCheckAlbum);
+
+    if (!rowCount) {
+      throw new NotFoundError('Album tidak ditemukan');
+    }
+
+    const queryCheckUserLike = {
+      text: 'SELECT * FROM user_album_likes WHERE album_id = $1 AND user_id = $2',
+      values: [albumId, userId],
+    };
+
+    const { rowCount: userLike } = await this._pool.query(queryCheckUserLike);
+
+    if (!userLike) {
+      const id = `albumLikes-${nanoid(16)}`;
+      const queryAddUserLike = {
+        text: 'INSERT INTO user_album_likes VALUES($1, $2, $3) RETURNING id',
+        values: [id, userId, albumId],
+      };
+
+      await this._pool.query(queryAddUserLike);
+      await this._cacheService.delete(albumId);
+      return 'Anda menyukai album ini';
+    }
+
+    const queryUserUnlike = {
+      text: 'DELETE FROM user_album_likes WHERE user_id = $1 AND album_id = $2',
+      values: [userId, albumId],
+    };
+
+    await this._pool.query(queryUserUnlike);
+    await this._cacheService.delete(albumId);
+    return 'Anda tidak menyukai album ini';
+  }
+
+  async getAlbumLikes(albumId) {
+    const query = {
+      text: 'SELECT * FROM user_album_likes WHERE album_id = $1',
+      values: [albumId],
+    };
+
+    const { rowCount } = await this._pool.query(query);
+
+    await this._cacheService.set(albumId, JSON.stringify(rowCount));
+
+    return rowCount;
   }
 }
 

@@ -1,7 +1,3 @@
-/* eslint-disable max-len */
-/* eslint-disable no-plusplus */
-/* eslint-disable no-unreachable-loop */
-/* eslint-disable no-await-in-loop */
 const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../exceptions/InvariantError');
@@ -20,13 +16,13 @@ class PlaylistsService {
       values: [id, name, owner],
     };
 
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new InvariantError('Playlist gagal ditambahkan');
     }
 
-    return result.rows[0].id;
+    return rows[0].id;
   }
 
   async getPlaylists(owner) {
@@ -38,9 +34,9 @@ class PlaylistsService {
      `,
       values: [owner],
     };
-    const result = await this._pool.query(query);
+    const { rows } = await this._pool.query(query);
 
-    return result.rows;
+    return rows;
   }
 
   async deletePlaylistById(id) {
@@ -49,9 +45,9 @@ class PlaylistsService {
       values: [id],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Gagal menghapus playlist. Id tidak ditemukan');
     }
   }
@@ -62,13 +58,13 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Playlist tidak ditemukan');
     }
 
-    const playlist = result.rows[0];
+    const playlist = rows[0];
 
     if (playlist.owner !== userId) {
       throw new AuthorizationError('Anda tidak berhak mengakses resource ini');
@@ -81,9 +77,9 @@ class PlaylistsService {
       values: [playlistId, userId],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new InvariantError('Kolaborasi gagal diverifikasi');
     }
   }
@@ -109,9 +105,9 @@ class PlaylistsService {
       values: [songId],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Song tidak ditemukan');
     }
 
@@ -130,22 +126,20 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    const resultPlaylist = await this._pool.query(queryPlaylist);
+    const { rows } = await this._pool.query(queryPlaylist);
 
-    const playlist = resultPlaylist.rows[0];
+    const playlist = rows[0];
 
     const querySongs = {
       text: 'SELECT songs.id, songs.title, songs.performer FROM songs INNER JOIN playlistsongs ON playlistsongs.song_id = songs.id WHERE playlistsongs.playlist_id = $1',
       values: [playlistId],
     };
 
-    const resultSongs = await this._pool.query(querySongs);
-
-    const songsInPlaylist = resultSongs.rows;
+    const { rows: songs } = await this._pool.query(querySongs);
 
     const data = {
       ...playlist,
-      songs: songsInPlaylist,
+      songs,
     };
 
     return data;
@@ -170,13 +164,11 @@ class PlaylistsService {
       values: [playlistId],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount, rows: activities } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw InvariantError('Belum ada aktivitas pada playlist');
     }
-
-    const activities = result.rows;
 
     const data = {
       playlistId,

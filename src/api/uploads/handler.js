@@ -1,11 +1,8 @@
-const AlbumsService = require('../../services/AlbumsService');
-
 class UploadsHandler {
-  constructor(service, validator) {
-    this._service = service;
+  constructor(uploadService, albumsService, validator) {
+    this._uploadService = uploadService;
+    this._albumsService = albumsService;
     this._validator = validator;
-
-    this._albumsService = new AlbumsService();
   }
 
   async postUploadCoverAlbumHandler(request, h) {
@@ -15,7 +12,7 @@ class UploadsHandler {
     const { cover } = request.payload;
     const { id: albumId } = request.params;
 
-    const filename = await this._service.writeFile(cover, cover.hapi);
+    const filename = await this._uploadService.writeFile(cover, cover.hapi);
 
     const coverUrl = `http://${process.env.HOST}:${process.env.PORT}/upload/images/${filename}`;
     console.log(coverUrl);

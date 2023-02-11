@@ -5,6 +5,7 @@ const Jwt = require('@hapi/jwt');
 const Inert = require('@hapi/inert');
 const path = require('path');
 
+const config = require('./utils/config');
 const ClientError = require('./exceptions/ClientError');
 
 // albums
@@ -55,11 +56,11 @@ const init = async () => {
   const usersService = new UsersService();
   const authenticationsService = new AuthenticationsService();
   const collaborationsService = new CollaborationsService();
-  const storageService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
+  const uploadService = new StorageService(path.resolve(__dirname, 'api/uploads/file/images'));
 
   const server = Hapi.server({
-    port: process.env.PORT,
-    host: process.env.HOST,
+    port: config.app.port,
+    host: config.app.host,
     routes: {
       cors: {
         origin: ['*'],
@@ -77,7 +78,6 @@ const init = async () => {
     },
   ]);
 
-  // mendefinisikan strategy autentikasi jwt
   server.auth.strategy('openmusicapp_jwt', 'jwt', {
     keys: process.env.ACCESS_TOKEN_KEY,
     verify: {
@@ -150,7 +150,8 @@ const init = async () => {
     {
       plugin: uploads,
       options: {
-        service: storageService,
+        uploadService,
+        albumsService,
         validator: UploadsValidator,
       },
     },

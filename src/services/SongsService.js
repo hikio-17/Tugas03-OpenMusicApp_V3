@@ -1,9 +1,8 @@
-/* eslint-disable max-len */
 const { Pool } = require('pg');
 const { nanoid } = require('nanoid');
 const InvariantError = require('../exceptions/InvariantError');
 const NotFoundError = require('../exceptions/NotFoundError');
-const mapDBToModel = require('../utils/mapDBToModel');
+const { mapDBToModel } = require('../utils/mapDBToModel');
 
 class SongsService {
   constructor() {
@@ -20,19 +19,17 @@ class SongsService {
       values: [id, title, year, genre, performer, duration, albumId],
     };
 
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new InvariantError('Song gagal ditambahkan');
     }
 
-    return result.rows[0].id;
+    return rows[0].id;
   }
 
   async getSongs({ title, performer }) {
-    const result = await this._pool.query('SELECT id, title, performer FROM songs');
-
-    const songs = result.rows;
+    const { rows: songs } = await this._pool.query('SELECT id, title, performer FROM songs');
 
     if (title && performer) {
       const songsByTitlePerformer = songs.filter((song) => song.title.toLowerCase().includes(title.toLowerCase()) && song.performer.toLowerCase().includes(performer.toLowerCase()));
@@ -51,7 +48,7 @@ class SongsService {
 
       return songsByPerformer;
     }
-    return result.rows;
+    return songs;
   }
 
   async getSongById(id) {
@@ -60,13 +57,13 @@ class SongsService {
       values: [id],
     };
 
-    const result = await this._pool.query(query);
+    const { rows, rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Songs tidak ditemukan');
     }
 
-    return result.rows.map(mapDBToModel)[0];
+    return rows.map(mapDBToModel)[0];
   }
 
   async editSongById(id, {
@@ -77,9 +74,9 @@ class SongsService {
       values: [title, year, genre, performer, duration, albumId, id],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Gagal memperbarui catatan. Id tidak ditemukan');
     }
   }
@@ -90,9 +87,9 @@ class SongsService {
       values: [id],
     };
 
-    const result = await this._pool.query(query);
+    const { rowCount } = await this._pool.query(query);
 
-    if (!result.rowCount) {
+    if (!rowCount) {
       throw new NotFoundError('Gagal menghapus song. Id tidak ditemukan');
     }
   }
